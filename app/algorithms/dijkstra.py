@@ -37,6 +37,10 @@ def run_dijkstra(
     Use cases:
         Prefer Dijkstra when grid weights matter and the optimal route should be
         chosen by total traversal cost rather than the fewest number of steps.
+
+    Cost semantics:
+        `total_cost` excludes the starting cell and sums only the traversal cost
+        of cells entered after leaving the start position.
     """
 
     started_at = perf_counter()

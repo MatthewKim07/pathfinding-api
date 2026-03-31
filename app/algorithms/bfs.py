@@ -92,16 +92,3 @@ def run_bfs(
         visited_nodes=visited_nodes,
         runtime_ms=elapsed_ms(started_at),
     )
-
-
-def _calculate_path_cost(
-    grid: NDArray[np.int64], path: list[GridCoordinate]
-) -> int:
-    """Calculate the cost of the returned BFS path, excluding the starting cell.
-
-    BFS still optimizes for the fewest movement steps, not the lowest weighted
-    cost. The reported `total_cost` is therefore descriptive for the chosen path
-    rather than an optimization target.
-    """
-
-    return calculate_path_cost(grid, path)

@@ -1,6 +1,7 @@
 """Unit tests for the Dijkstra pathfinding implementation."""
 
 import numpy as np
+import pytest
 
 from app.algorithms import run_bfs, run_dijkstra
 
@@ -24,6 +25,27 @@ def test_run_dijkstra_returns_the_lowest_cost_path_on_a_weighted_grid() -> None:
     assert result.total_cost == 4
     assert result.path_length == 4
     assert result.visited_nodes > 0
+    assert result.runtime_ms >= 0
+
+
+def test_run_dijkstra_handles_the_trivial_start_equals_end_case() -> None:
+    """Dijkstra should return immediately when the start and end are identical."""
+
+    grid = np.array(
+        [
+            [7, 1],
+            [1, 1],
+        ],
+        dtype=np.int64,
+    )
+
+    result = run_dijkstra(grid=grid, start=(0, 0), end=(0, 0))
+
+    assert result.path_found is True
+    assert result.path == [(0, 0)]
+    assert result.total_cost == 0
+    assert result.path_length == 0
+    assert result.visited_nodes == 1
     assert result.runtime_ms >= 0
 
 
@@ -58,6 +80,27 @@ def test_run_dijkstra_prefers_lower_cost_over_the_bfs_shortest_step_route() -> N
     assert dijkstra_result.runtime_ms >= 0
 
 
+def test_run_dijkstra_handles_stale_heap_entries_with_the_cheapest_final_path() -> None:
+    """Older expensive heap entries should not prevent the cheapest path from winning."""
+
+    grid = np.array(
+        [
+            [1, 1, 50, 1],
+            [1, 1, 1, 1],
+        ],
+        dtype=np.int64,
+    )
+
+    result = run_dijkstra(grid=grid, start=(0, 0), end=(0, 3))
+
+    assert result.path_found is True
+    assert result.path == [(0, 0), (0, 1), (1, 1), (1, 2), (1, 3), (0, 3)]
+    assert result.total_cost == 5
+    assert result.path_length == 5
+    assert result.visited_nodes > 0
+    assert result.runtime_ms >= 0
+
+
 def test_run_dijkstra_returns_no_path_when_destination_is_unreachable() -> None:
     """Dijkstra should fail cleanly when no route exists."""
 
@@ -77,3 +120,20 @@ def test_run_dijkstra_returns_no_path_when_destination_is_unreachable() -> None:
     assert result.path_length == 0
     assert result.visited_nodes == 1
     assert result.runtime_ms >= 0
+
+
+def test_run_dijkstra_rejects_blocked_start_coordinates() -> None:
+    """Dijkstra should reject invalid blocked starting cells."""
+
+    grid = np.array(
+        [
+            [0, 1],
+            [1, 1],
+        ],
+        dtype=np.int64,
+    )
+
+    with pytest.raises(
+        ValueError, match="Start coordinate cannot reference a blocked cell"
+    ):
+        run_dijkstra(grid=grid, start=(0, 0), end=(1, 1))
