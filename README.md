@@ -1,8 +1,8 @@
-# Pathfinding & Route Optimization API
+# Pathfinding & Route Optimization API 🚀
 
 A FastAPI backend for exploring grid-based pathfinding on weighted and unweighted maps. The project implements BFS, Dijkstra, and A* from scratch, exposes them through a clean API, and includes a benchmarking system for comparing runtime, search effort, and success rates across scenarios.
 
-## Overview
+## 🔍 Overview
 
 This project is built as a backend portfolio piece rather than a single-file algorithm demo. It focuses on:
 
@@ -15,9 +15,9 @@ This project is built as a backend portfolio piece rather than a single-file alg
 
 The API is fully local and does not depend on external services.
 
-## Features
+## ⚙️ Features
 
-### Pathfinding
+### 🧠 Pathfinding
 
 - `bfs`: shortest path by number of steps on unweighted grids
 - `dijkstra`: minimum-cost path on weighted grids
@@ -32,14 +32,14 @@ All algorithms support:
 - visited-node counts
 - runtime measurement in milliseconds
 
-### Maps
+### 🗺️ Maps
 
 - predefined sample maps via `GET /maps/sample`
 - seeded random map generation via `POST /maps/random`
 - configurable `rows`, `cols`, `obstacle_ratio`, and `max_weight`
 - guaranteed path from the returned `start` `(0, 0)` to the returned `end` `(rows - 1, cols - 1)` for generated maps
 
-### Benchmarking
+### 📊 Benchmarking
 
 - benchmark multiple maps in one request
 - benchmark multiple algorithms in one run
@@ -48,7 +48,14 @@ All algorithms support:
 - export CSV output under `app/data/benchmark_results/`
 - return aggregated summaries and readable highlights
 
-## Tech Stack
+### 🔁 Reproducibility
+
+- benchmark runs are deterministic relative to their input maps
+- sample maps can be reused directly
+- random maps can be regenerated with a fixed `seed`
+- custom maps can be benchmarked repeatedly without hidden randomness
+
+## 🧰 Tech Stack
 
 - Python 3.12+
 - FastAPI
@@ -58,7 +65,7 @@ All algorithms support:
 - Uvicorn
 - Pytest
 
-## Architecture
+## 🏗️ Architecture
 
 The codebase follows a layered structure:
 
@@ -70,7 +77,13 @@ The codebase follows a layered structure:
 
 Routes stay thin. Algorithm selection, benchmarking, and map generation live outside the API layer, which keeps the code easier to test and extend.
 
-## Project Structure
+```text
+API routes -> services -> algorithms
+           -> schemas
+           -> data
+```
+
+## 🗂️ Project Structure
 
 ```text
 pathfinding-api/
@@ -87,7 +100,7 @@ pathfinding-api/
 └── requirements.txt
 ```
 
-## Grid Model
+## 🧱 Grid Model
 
 - `0` = blocked cell
 - positive integers = traversal cost
@@ -104,7 +117,7 @@ Example:
 ]
 ```
 
-## Algorithms
+## 🧠 Algorithms
 
 ### BFS
 
@@ -131,7 +144,7 @@ A* also minimizes total traversal cost, but uses a Manhattan-distance heuristic 
 - Manhattan heuristic aligned with 4-directional movement
 - same optimal-cost guarantee as Dijkstra on this grid model
 
-## Setup
+## 🚀 Setup
 
 ### 1. Create and activate a virtual environment
 
@@ -159,7 +172,7 @@ uvicorn app.main:app --reload
 - `http://127.0.0.1:8000`
 - `http://127.0.0.1:8000/docs`
 
-## Testing
+## 🧪 Testing
 
 Run the full suite:
 
@@ -175,7 +188,7 @@ The current suite includes 48 tests covering:
 - map generation
 - benchmarking workflows
 
-## API Endpoints
+## 📡 API Endpoints
 
 ### `GET /`
 
@@ -362,7 +375,7 @@ Each benchmark run is also saved to CSV under `app/data/benchmark_results/`.
 
 Returns the most recently saved benchmark result, if one exists.
 
-## Benchmarking Notes
+## 📈 Benchmarking Notes
 
 Benchmark runs collect:
 
@@ -386,15 +399,16 @@ Because the benchmark service itself is deterministic relative to its inputs, re
 - custom fixed maps
 - seeded generated maps
 
-## Example Interpretation
+## 💡 Example Interpretation
 
 Typical patterns you can observe from the benchmark output:
 
 - BFS can appear efficient on step count but return higher path costs on weighted maps.
 - Dijkstra guarantees optimal weighted cost but may visit more nodes.
 - A* can match Dijkstra’s optimal cost while reducing average runtime or search effort on goal-directed maps.
+- Benchmark highlights make it easy to surface statements like “A* was fastest on average” or “BFS visited the fewest nodes on this scenario mix.”
 
-## Future Work
+## 🔭 Future Work
 
 Potential next steps:
 
