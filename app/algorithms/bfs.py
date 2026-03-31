@@ -62,6 +62,7 @@ def run_bfs(
     visited = np.zeros(grid.shape, dtype=bool)
     visited[start] = True
     parents: dict[GridCoordinate, GridCoordinate | None] = {start: None}
+    # Count cells that are actually dequeued and processed by BFS.
     visited_nodes = 0
 
     while queue:
@@ -160,7 +161,12 @@ def _reconstruct_path(
 def _calculate_path_cost(
     grid: NDArray[np.int64], path: list[GridCoordinate]
 ) -> int:
-    """Calculate the traversal cost excluding the starting cell."""
+    """Calculate the cost of the returned BFS path, excluding the starting cell.
+
+    BFS still optimizes for the fewest movement steps, not the lowest weighted
+    cost. The reported `total_cost` is therefore descriptive for the chosen path
+    rather than an optimization target.
+    """
 
     return int(sum(grid[row, col] for row, col in path[1:]))
 

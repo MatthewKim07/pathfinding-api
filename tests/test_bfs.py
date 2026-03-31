@@ -27,6 +27,26 @@ def test_run_bfs_reconstructs_the_expected_shortest_path() -> None:
     assert result.runtime_ms >= 0
 
 
+def test_run_bfs_uses_deterministic_neighbor_order_for_tied_paths() -> None:
+    """BFS should prefer the right-first route when multiple shortest paths exist."""
+
+    grid = np.array(
+        [
+            [1, 1, 1],
+            [1, 1, 1],
+        ],
+        dtype=np.int64,
+    )
+
+    result = run_bfs(grid=grid, start=(0, 0), end=(1, 2))
+
+    assert result.path_found is True
+    assert result.path == [(0, 0), (0, 1), (0, 2), (1, 2)]
+    assert result.total_cost == 3
+    assert result.path_length == 3
+    assert result.runtime_ms >= 0
+
+
 def test_run_bfs_returns_no_path_when_destination_is_unreachable() -> None:
     """BFS should fail cleanly when no route exists."""
 

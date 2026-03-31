@@ -94,3 +94,21 @@ def test_path_endpoint_rejects_algorithms_not_implemented_yet() -> None:
     assert response.json() == {
         "detail": "Algorithm 'dijkstra' is not implemented yet."
     }
+
+
+def test_path_endpoint_returns_422_for_invalid_payloads() -> None:
+    """Schema validation errors should surface as FastAPI 422 responses."""
+
+    response = client.post(
+        "/path",
+        json={
+            "grid": [],
+            "start": {"row": 0, "col": 0},
+            "end": {"row": 0, "col": 0},
+            "algorithm": "bfs",
+        },
+    )
+
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert any("Grid must contain at least one row." in item["msg"] for item in detail)
