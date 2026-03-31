@@ -9,9 +9,17 @@ from app.schemas import (
     Coordinate,
     PathRequest,
     PathResponse,
+    RandomMapRequest,
+    RandomMapResponse,
+    SampleMapsResponse,
     ServiceInfoResponse,
 )
-from app.services import AlgorithmNotImplementedError, solve_path
+from app.services import (
+    AlgorithmNotImplementedError,
+    generate_random_map,
+    list_sample_maps,
+    solve_path,
+)
 
 router = APIRouter()
 
@@ -21,6 +29,20 @@ def read_root() -> ServiceInfoResponse:
     """Return basic service metadata for health checks and discovery."""
 
     return ServiceInfoResponse(name=APP_TITLE, version=APP_VERSION, status="ok")
+
+
+@router.get("/maps/sample", response_model=SampleMapsResponse, tags=["maps"])
+def get_sample_maps() -> SampleMapsResponse:
+    """Return predefined sample maps for local experimentation."""
+
+    return list_sample_maps()
+
+
+@router.post("/maps/random", response_model=RandomMapResponse, tags=["maps"])
+def create_random_map(request: RandomMapRequest) -> RandomMapResponse:
+    """Generate a random weighted map with reproducible configuration."""
+
+    return generate_random_map(request)
 
 
 @router.post("/path", response_model=PathResponse, tags=["pathfinding"])
