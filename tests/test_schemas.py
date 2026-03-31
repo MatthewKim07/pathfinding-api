@@ -40,6 +40,20 @@ def test_path_request_rejects_empty_grid() -> None:
         )
 
 
+def test_path_request_rejects_grid_with_empty_rows() -> None:
+    """Each row must contain at least one column."""
+
+    with pytest.raises(
+        ValidationError, match="Grid rows must contain at least one column"
+    ):
+        PathRequest(
+            grid=[[]],
+            start=Coordinate(row=0, col=0),
+            end=Coordinate(row=0, col=0),
+            algorithm=AlgorithmChoice.BFS,
+        )
+
+
 def test_path_request_rejects_non_rectangular_grid() -> None:
     """All rows should have the same width."""
 
@@ -78,6 +92,27 @@ def test_path_request_rejects_boolean_grid_values() -> None:
         )
 
 
+def test_path_request_rejects_invalid_algorithm_value() -> None:
+    """Algorithm selection should be constrained to supported enum values."""
+
+    with pytest.raises(
+        ValidationError, match="Input should be 'bfs', 'dijkstra' or 'astar'"
+    ):
+        PathRequest(
+            grid=[[1, 1], [1, 1]],
+            start=Coordinate(row=0, col=0),
+            end=Coordinate(row=1, col=1),
+            algorithm="bellman-ford",
+        )
+
+
+def test_coordinate_rejects_negative_values() -> None:
+    """Coordinates should reject negative indices."""
+
+    with pytest.raises(ValidationError, match="greater than or equal to 0"):
+        Coordinate(row=-1, col=0)
+
+
 def test_path_request_rejects_out_of_bounds_coordinates() -> None:
     """Coordinates must fall within the validated grid bounds."""
 
@@ -100,6 +135,20 @@ def test_path_request_rejects_blocked_start_coordinate() -> None:
     ):
         PathRequest(
             grid=[[0, 1], [1, 1]],
+            start=Coordinate(row=0, col=0),
+            end=Coordinate(row=1, col=1),
+            algorithm=AlgorithmChoice.BFS,
+        )
+
+
+def test_path_request_rejects_blocked_end_coordinate() -> None:
+    """The destination cell must also be traversable."""
+
+    with pytest.raises(
+        ValidationError, match="End coordinate cannot reference a blocked cell"
+    ):
+        PathRequest(
+            grid=[[1, 1], [1, 0]],
             start=Coordinate(row=0, col=0),
             end=Coordinate(row=1, col=1),
             algorithm=AlgorithmChoice.BFS,
