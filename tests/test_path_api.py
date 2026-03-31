@@ -74,8 +74,8 @@ def test_path_endpoint_returns_no_path_for_unreachable_grids() -> None:
     assert body["runtime_ms"] >= 0
 
 
-def test_path_endpoint_rejects_algorithms_not_implemented_yet() -> None:
-    """Only BFS should be available at this milestone."""
+def test_path_endpoint_rejects_unknown_algorithm_values_with_422() -> None:
+    """Unknown algorithm strings should be rejected by schema validation."""
 
     response = client.post(
         "/path",
@@ -86,14 +86,11 @@ def test_path_endpoint_rejects_algorithms_not_implemented_yet() -> None:
             ],
             "start": {"row": 0, "col": 0},
             "end": {"row": 1, "col": 1},
-            "algorithm": "astar",
+            "algorithm": "unknown",
         },
     )
 
-    assert response.status_code == 501
-    assert response.json() == {
-        "detail": "Algorithm 'astar' is not implemented yet."
-    }
+    assert response.status_code == 422
 
 
 def test_path_endpoint_returns_422_for_invalid_payloads() -> None:
@@ -135,6 +132,43 @@ def test_path_endpoint_runs_dijkstra_and_returns_the_weighted_optimal_path() -> 
     body = response.json()
 
     assert body["algorithm"] == "dijkstra"
+    assert body["path"] == [
+        {"row": 0, "col": 0},
+        {"row": 1, "col": 0},
+        {"row": 2, "col": 0},
+        {"row": 2, "col": 1},
+        {"row": 2, "col": 2},
+        {"row": 1, "col": 2},
+        {"row": 0, "col": 2},
+    ]
+    assert body["path_found"] is True
+    assert body["total_cost"] == 6
+    assert body["path_length"] == 6
+    assert body["visited_nodes"] > 0
+    assert body["runtime_ms"] >= 0
+
+
+def test_path_endpoint_runs_astar_and_returns_the_weighted_optimal_path() -> None:
+    """The API should expose A*'s minimum-cost path on weighted grids."""
+
+    response = client.post(
+        "/path",
+        json={
+            "grid": [
+                [1, 9, 1],
+                [1, 9, 1],
+                [1, 1, 1],
+            ],
+            "start": {"row": 0, "col": 0},
+            "end": {"row": 0, "col": 2},
+            "algorithm": "astar",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["algorithm"] == "astar"
     assert body["path"] == [
         {"row": 0, "col": 0},
         {"row": 1, "col": 0},

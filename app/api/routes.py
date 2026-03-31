@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.algorithms import PathfindingResult, run_bfs, run_dijkstra
+from app.algorithms import PathfindingResult, run_astar, run_bfs, run_dijkstra
 from app.core.config import APP_TITLE, APP_VERSION
 from app.schemas import (
     AlgorithmChoice,
@@ -34,6 +34,12 @@ def find_path(request: PathRequest) -> PathResponse:
         )
     elif request.algorithm == AlgorithmChoice.DIJKSTRA:
         result = run_dijkstra(
+            grid=request.to_numpy(),
+            start=request.start.as_tuple(),
+            end=request.end.as_tuple(),
+        )
+    elif request.algorithm == AlgorithmChoice.ASTAR:
+        result = run_astar(
             grid=request.to_numpy(),
             start=request.start.as_tuple(),
             end=request.end.as_tuple(),
