@@ -1,9 +1,16 @@
 """Top-level API routes."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
+from app.algorithms import run_bfs
 from app.core.config import APP_TITLE, APP_VERSION
-from app.schemas import ServiceInfoResponse
+from app.schemas import (
+    AlgorithmChoice,
+    Coordinate,
+    PathRequest,
+    PathResponse,
+    ServiceInfoResponse,
+)
 
 router = APIRouter()
 
@@ -13,3 +20,29 @@ def read_root() -> ServiceInfoResponse:
     """Return basic service metadata for health checks and discovery."""
 
     return ServiceInfoResponse(name=APP_TITLE, version=APP_VERSION, status="ok")
+
+
+@router.post("/path", response_model=PathResponse, tags=["pathfinding"])
+def find_path(request: PathRequest) -> PathResponse:
+    """Run the requested pathfinding algorithm for a validated grid payload."""
+
+    if request.algorithm != AlgorithmChoice.BFS:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Algorithm '{request.algorithm.value}' is not implemented yet.",
+        )
+
+    result = run_bfs(
+        grid=request.to_numpy(),
+        start=request.start.as_tuple(),
+        end=request.end.as_tuple(),
+    )
+    return PathResponse(
+        algorithm=request.algorithm,
+        path=[Coordinate(row=row, col=col) for row, col in result.path],
+        path_found=result.path_found,
+        total_cost=result.total_cost,
+        path_length=result.path_length,
+        visited_nodes=result.visited_nodes,
+        runtime_ms=result.runtime_ms,
+    )
