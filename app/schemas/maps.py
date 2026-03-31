@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, StrictInt
 
-from app.schemas.pathfinding import Coordinate
+from app.schemas.pathfinding import Coordinate, GridProblem
 
 
 class SampleMap(BaseModel):
@@ -55,3 +55,9 @@ class RandomMapResponse(BaseModel):
     max_weight: int
     seed: int | None
     guaranteed_path: bool
+
+
+class BenchmarkMapInput(GridProblem):
+    """A named map scenario to include in benchmark runs."""
+
+    name: str | None = None

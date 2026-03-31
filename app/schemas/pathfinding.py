@@ -47,15 +47,14 @@ class ServiceInfoResponse(BaseModel):
     status: str
 
 
-class PathRequest(BaseModel):
-    """Validated input payload for grid-based pathfinding requests."""
+class GridProblem(BaseModel):
+    """Validated grid/start/end payload shared across pathfinding use cases."""
 
     model_config = ConfigDict(extra="forbid")
 
     grid: list[list[StrictInt]]
     start: Coordinate
     end: Coordinate
-    algorithm: AlgorithmChoice
 
     @field_validator("grid")
     @classmethod
@@ -79,7 +78,7 @@ class PathRequest(BaseModel):
         return grid
 
     @model_validator(mode="after")
-    def validate_coordinates(self) -> PathRequest:
+    def validate_coordinates(self) -> GridProblem:
         """Ensure coordinates are within bounds and point to traversable cells."""
 
         max_row = len(self.grid)
@@ -107,6 +106,12 @@ class PathRequest(BaseModel):
         """Convert the validated grid to a NumPy array for algorithm processing."""
 
         return np.asarray(self.grid, dtype=np.int64)
+
+
+class PathRequest(GridProblem):
+    """Validated input payload for grid-based pathfinding requests."""
+
+    algorithm: AlgorithmChoice
 
 
 class PathResponse(BaseModel):

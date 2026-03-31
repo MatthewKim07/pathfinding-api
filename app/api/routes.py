@@ -6,6 +6,8 @@ from app.algorithms import PathfindingResult
 from app.core.config import APP_TITLE, APP_VERSION
 from app.schemas import (
     AlgorithmChoice,
+    BenchmarkRequest,
+    BenchmarkResponse,
     Coordinate,
     PathRequest,
     PathResponse,
@@ -16,8 +18,11 @@ from app.schemas import (
 )
 from app.services import (
     AlgorithmNotImplementedError,
+    BenchmarkResultsNotFoundError,
     generate_random_map,
     list_sample_maps,
+    load_latest_benchmark,
+    run_benchmark,
     solve_path,
 )
 
@@ -43,6 +48,26 @@ def create_random_map(request: RandomMapRequest) -> RandomMapResponse:
     """Generate a random weighted map with reproducible configuration."""
 
     return generate_random_map(request)
+
+
+@router.get("/benchmark/sample", response_model=BenchmarkResponse, tags=["benchmark"])
+def get_sample_benchmark() -> BenchmarkResponse:
+    """Return the most recently saved benchmark summary, if one exists."""
+
+    try:
+        return load_latest_benchmark()
+    except BenchmarkResultsNotFoundError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error),
+        ) from error
+
+
+@router.post("/benchmark", response_model=BenchmarkResponse, tags=["benchmark"])
+def create_benchmark(request: BenchmarkRequest) -> BenchmarkResponse:
+    """Run benchmark comparisons across multiple maps and algorithms."""
+
+    return run_benchmark(request)
 
 
 @router.post("/path", response_model=PathResponse, tags=["pathfinding"])

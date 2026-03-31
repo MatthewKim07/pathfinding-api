@@ -209,3 +209,4 @@ __marimo__/
 # Project artifacts
 .DS_Store
 benchmark_results/
+app/data/benchmark_results/*.csv
