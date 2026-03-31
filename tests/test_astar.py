@@ -1,6 +1,7 @@
 """Unit tests for the A* pathfinding implementation."""
 
 import numpy as np
+import pytest
 
 from app.algorithms import run_astar, run_dijkstra
 
@@ -49,8 +50,8 @@ def test_run_astar_matches_dijkstra_on_weighted_optimality() -> None:
     assert astar_result.runtime_ms >= 0
 
 
-def test_run_astar_handles_stale_entries_and_start_end_edge_cases() -> None:
-    """A* should handle both the trivial and stale-entry scenarios cleanly."""
+def test_run_astar_handles_the_trivial_start_equals_end_case() -> None:
+    """A* should return immediately when the start and end are identical."""
 
     trivial_grid = np.array(
         [
@@ -67,9 +68,13 @@ def test_run_astar_handles_stale_entries_and_start_end_edge_cases() -> None:
     assert trivial_result.path_length == 0
     assert trivial_result.visited_nodes == 1
 
+
+def test_run_astar_handles_stale_heap_entries_before_finalization() -> None:
+    """A* should ignore older worse entries for the same node before it is finalized."""
+
     stale_grid = np.array(
         [
-            [1, 1, 50, 1],
+            [1, 50, 1, 1],
             [1, 1, 1, 1],
         ],
         dtype=np.int64,
@@ -77,7 +82,7 @@ def test_run_astar_handles_stale_entries_and_start_end_edge_cases() -> None:
     stale_result = run_astar(grid=stale_grid, start=(0, 0), end=(0, 3))
 
     assert stale_result.path_found is True
-    assert stale_result.path == [(0, 0), (0, 1), (1, 1), (1, 2), (1, 3), (0, 3)]
+    assert stale_result.path == [(0, 0), (1, 0), (1, 1), (1, 2), (1, 3), (0, 3)]
     assert stale_result.total_cost == 5
     assert stale_result.path_length == 5
     assert stale_result.runtime_ms >= 0
@@ -102,3 +107,20 @@ def test_run_astar_returns_no_path_when_destination_is_unreachable() -> None:
     assert result.path_length == 0
     assert result.visited_nodes == 1
     assert result.runtime_ms >= 0
+
+
+def test_run_astar_rejects_blocked_end_coordinates() -> None:
+    """A* should reject invalid blocked destination cells."""
+
+    grid = np.array(
+        [
+            [1, 1],
+            [1, 0],
+        ],
+        dtype=np.int64,
+    )
+
+    with pytest.raises(
+        ValueError, match="End coordinate cannot reference a blocked cell"
+    ):
+        run_astar(grid=grid, start=(0, 0), end=(1, 1))

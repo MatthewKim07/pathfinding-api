@@ -183,3 +183,34 @@ def test_path_endpoint_runs_astar_and_returns_the_weighted_optimal_path() -> Non
     assert body["path_length"] == 6
     assert body["visited_nodes"] > 0
     assert body["runtime_ms"] >= 0
+
+
+def test_path_endpoint_returns_no_path_for_unreachable_astar_grids() -> None:
+    """The API should return a clean no-path response for unreachable A* searches."""
+
+    response = client.post(
+        "/path",
+        json={
+            "grid": [
+                [1, 0],
+                [0, 1],
+            ],
+            "start": {"row": 0, "col": 0},
+            "end": {"row": 1, "col": 1},
+            "algorithm": "astar",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body == {
+        "algorithm": "astar",
+        "path": [],
+        "path_found": False,
+        "total_cost": None,
+        "path_length": 0,
+        "visited_nodes": 1,
+        "runtime_ms": body["runtime_ms"],
+    }
+    assert body["runtime_ms"] >= 0

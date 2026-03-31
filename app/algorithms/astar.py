@@ -67,7 +67,8 @@ def run_astar(
         (_manhattan_distance(start, end), next(push_order), start)
     ]
     g_scores[start] = 0
-    # Count cells that are finalized after being popped with their best-known f-score.
+    # Count cells finalized when popped with their optimal g_cost; stale heap
+    # entries for already-finalized nodes are skipped.
     visited_nodes = 0
 
     while heap:
