@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.algorithms import run_bfs
+from app.algorithms import PathfindingResult, run_bfs, run_dijkstra
 from app.core.config import APP_TITLE, APP_VERSION
 from app.schemas import (
     AlgorithmChoice,
@@ -26,19 +26,34 @@ def read_root() -> ServiceInfoResponse:
 def find_path(request: PathRequest) -> PathResponse:
     """Run the requested pathfinding algorithm for a validated grid payload."""
 
-    if request.algorithm != AlgorithmChoice.BFS:
+    if request.algorithm == AlgorithmChoice.BFS:
+        result = run_bfs(
+            grid=request.to_numpy(),
+            start=request.start.as_tuple(),
+            end=request.end.as_tuple(),
+        )
+    elif request.algorithm == AlgorithmChoice.DIJKSTRA:
+        result = run_dijkstra(
+            grid=request.to_numpy(),
+            start=request.start.as_tuple(),
+            end=request.end.as_tuple(),
+        )
+    else:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
             detail=f"Algorithm '{request.algorithm.value}' is not implemented yet.",
         )
 
-    result = run_bfs(
-        grid=request.to_numpy(),
-        start=request.start.as_tuple(),
-        end=request.end.as_tuple(),
-    )
+    return _to_path_response(request.algorithm, result)
+
+
+def _to_path_response(
+    algorithm: AlgorithmChoice, result: PathfindingResult
+) -> PathResponse:
+    """Convert an internal algorithm result into the API response model."""
+
     return PathResponse(
-        algorithm=request.algorithm,
+        algorithm=algorithm,
         path=[Coordinate(row=row, col=col) for row, col in result.path],
         path_found=result.path_found,
         total_cost=result.total_cost,

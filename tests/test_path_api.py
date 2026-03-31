@@ -86,13 +86,13 @@ def test_path_endpoint_rejects_algorithms_not_implemented_yet() -> None:
             ],
             "start": {"row": 0, "col": 0},
             "end": {"row": 1, "col": 1},
-            "algorithm": "dijkstra",
+            "algorithm": "astar",
         },
     )
 
     assert response.status_code == 501
     assert response.json() == {
-        "detail": "Algorithm 'dijkstra' is not implemented yet."
+        "detail": "Algorithm 'astar' is not implemented yet."
     }
 
 
@@ -112,3 +112,40 @@ def test_path_endpoint_returns_422_for_invalid_payloads() -> None:
     assert response.status_code == 422
     detail = response.json()["detail"]
     assert any("Grid must contain at least one row." in item["msg"] for item in detail)
+
+
+def test_path_endpoint_runs_dijkstra_and_returns_the_weighted_optimal_path() -> None:
+    """The API should expose Dijkstra's minimum-cost path on weighted grids."""
+
+    response = client.post(
+        "/path",
+        json={
+            "grid": [
+                [1, 9, 1],
+                [1, 9, 1],
+                [1, 1, 1],
+            ],
+            "start": {"row": 0, "col": 0},
+            "end": {"row": 0, "col": 2},
+            "algorithm": "dijkstra",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+
+    assert body["algorithm"] == "dijkstra"
+    assert body["path"] == [
+        {"row": 0, "col": 0},
+        {"row": 1, "col": 0},
+        {"row": 2, "col": 0},
+        {"row": 2, "col": 1},
+        {"row": 2, "col": 2},
+        {"row": 1, "col": 2},
+        {"row": 0, "col": 2},
+    ]
+    assert body["path_found"] is True
+    assert body["total_cost"] == 6
+    assert body["path_length"] == 6
+    assert body["visited_nodes"] > 0
+    assert body["runtime_ms"] >= 0

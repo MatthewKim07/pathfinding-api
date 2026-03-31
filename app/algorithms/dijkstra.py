@@ -1,8 +1,9 @@
-"""Breadth-first search implementation for unweighted grid pathfinding."""
+"""Dijkstra implementation for weighted grid pathfinding."""
 
 from __future__ import annotations
 
-from collections import deque
+from heapq import heappop, heappush
+from itertools import count
 from time import perf_counter
 
 import numpy as np
@@ -11,7 +12,6 @@ from numpy.typing import NDArray
 from app.algorithms.common import (
     GridCoordinate,
     PathfindingResult,
-    calculate_path_cost,
     elapsed_ms,
     iter_neighbors,
     reconstruct_path,
@@ -20,23 +20,23 @@ from app.algorithms.common import (
 )
 
 
-def run_bfs(
+def run_dijkstra(
     grid: NDArray[np.int64], start: GridCoordinate, end: GridCoordinate
 ) -> PathfindingResult:
-    """Find the shortest 4-directional path on an unweighted grid using BFS.
+    """Find the minimum-cost 4-directional path on a weighted grid.
 
     Purpose:
-        Explore the grid level by level to guarantee the fewest movement steps
-        between the start and end coordinates when all moves have equal cost.
+        Explore the frontier in ascending total-cost order so the first time a
+        node is finalized, the cheapest path to it has been found.
 
     Complexity:
-        Time is O(rows * cols) in the worst case because each traversable cell is
-        processed at most once. Space is O(rows * cols) for the queue, visited
-        state, and parent map.
+        Time is O((rows * cols) log(rows * cols)) in the worst case because heap
+        operations dominate frontier updates. Space is O(rows * cols) for the
+        heap, distance table, visited state, and parent map.
 
     Use cases:
-        Prefer BFS for unweighted grids or when the primary goal is the minimum
-        number of steps rather than the minimum weighted traversal cost.
+        Prefer Dijkstra when grid weights matter and the optimal route should be
+        chosen by total traversal cost rather than the fewest number of steps.
     """
 
     started_at = perf_counter()
@@ -54,15 +54,21 @@ def run_bfs(
             runtime_ms=elapsed_ms(started_at),
         )
 
-    queue: deque[GridCoordinate] = deque([start])
+    distances = np.full(grid.shape, np.iinfo(np.int64).max, dtype=np.int64)
     visited = np.zeros(grid.shape, dtype=bool)
-    visited[start] = True
     parents: dict[GridCoordinate, GridCoordinate | None] = {start: None}
-    # Count cells that are actually dequeued and processed by BFS.
+    push_order = count()
+    heap: list[tuple[int, int, GridCoordinate]] = [(0, next(push_order), start)]
+    distances[start] = 0
+    # Count cells that are finalized after being popped with their best-known cost.
     visited_nodes = 0
 
-    while queue:
-        current = queue.popleft()
+    while heap:
+        current_cost, _, current = heappop(heap)
+        if visited[current]:
+            continue
+
+        visited[current] = True
         visited_nodes += 1
 
         if current == end:
@@ -70,7 +76,7 @@ def run_bfs(
             return PathfindingResult(
                 path=path,
                 path_found=True,
-                total_cost=calculate_path_cost(grid, path),
+                total_cost=int(current_cost),
                 path_length=len(path) - 1,
                 visited_nodes=visited_nodes,
                 runtime_ms=elapsed_ms(started_at),
@@ -80,9 +86,13 @@ def run_bfs(
             if visited[neighbor]:
                 continue
 
-            visited[neighbor] = True
+            next_cost = current_cost + int(grid[neighbor])
+            if next_cost >= int(distances[neighbor]):
+                continue
+
+            distances[neighbor] = next_cost
             parents[neighbor] = current
-            queue.append(neighbor)
+            heappush(heap, (next_cost, next(push_order), neighbor))
 
     return PathfindingResult(
         path=[],
@@ -92,16 +102,3 @@ def run_bfs(
         visited_nodes=visited_nodes,
         runtime_ms=elapsed_ms(started_at),
     )
-
-
-def _calculate_path_cost(
-    grid: NDArray[np.int64], path: list[GridCoordinate]
-) -> int:
-    """Calculate the cost of the returned BFS path, excluding the starting cell.
-
-    BFS still optimizes for the fewest movement steps, not the lowest weighted
-    cost. The reported `total_cost` is therefore descriptive for the chosen path
-    rather than an optimization target.
-    """
-
-    return calculate_path_cost(grid, path)
