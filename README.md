@@ -1,59 +1,60 @@
 # Pathfinding & Route Optimization API 🚀
 
-A FastAPI backend for exploring grid-based pathfinding on weighted and unweighted maps. The project implements BFS, Dijkstra, and A* from scratch, exposes them through a clean API, and includes a benchmarking system for comparing runtime, search effort, and success rates across scenarios.
+A FastAPI backend for grid-based pathfinding with BFS, Dijkstra, and A* implemented from scratch, plus reproducible map generation and benchmark reporting.
+
+## ✨ Highlights
+
+- BFS, Dijkstra, and A* implemented manually with `deque` and `heapq`
+- Layered backend structure: API routes, services, algorithms, schemas, and data
+- Pandas-based benchmarking with CSV export and summary comparisons
+- Seeded random map generation for reproducible experiments
+- Strong automated coverage across algorithms, services, and API endpoints
 
 ## 🔍 Overview
 
-This project is built as a backend portfolio piece rather than a single-file algorithm demo. It focuses on:
+This project started as an algorithms exercise, but it is built like a backend application rather than a standalone script. The goal is to show solid Python fundamentals, careful API design, clean separation of responsibilities, and measurable algorithm behavior on realistic grid scenarios.
 
-- correct algorithm implementations
-- strict request validation
-- thin API routes with a service layer
-- reproducible map generation
-- benchmark reporting with pandas and CSV export
-- comprehensive automated tests
+It supports custom pathfinding requests, predefined and generated maps, and comparative benchmarking across multiple algorithms. Everything runs locally with no external services.
 
-The API is fully local and does not depend on external services.
-
-## ⚙️ Features
+## ⚙️ What It Does
 
 ### 🧠 Pathfinding
 
-- `bfs`: shortest path by number of steps on unweighted grids
-- `dijkstra`: minimum-cost path on weighted grids
-- `astar`: minimum-cost path using a Manhattan-distance heuristic
+- `bfs` for shortest path by step count
+- `dijkstra` for minimum-cost weighted paths
+- `astar` for minimum-cost paths guided by Manhattan distance
 
-All algorithms support:
+Each run returns:
 
-- 4-directional movement
-- blocked cells (`0`)
-- positive traversal costs
-- path reconstruction
-- visited-node counts
-- runtime measurement in milliseconds
+- `path`
+- `path_found`
+- `total_cost`
+- `path_length`
+- `visited_nodes`
+- `runtime_ms`
 
 ### 🗺️ Maps
 
 - predefined sample maps via `GET /maps/sample`
 - seeded random map generation via `POST /maps/random`
 - configurable `rows`, `cols`, `obstacle_ratio`, and `max_weight`
-- guaranteed path from the returned `start` `(0, 0)` to the returned `end` `(rows - 1, cols - 1)` for generated maps
+- guaranteed path from `(0, 0)` to `(rows - 1, cols - 1)` for generated maps
 
 ### 📊 Benchmarking
 
 - benchmark multiple maps in one request
-- benchmark multiple algorithms in one run
+- benchmark multiple algorithms in the same run
 - repeat runs for more stable measurements
-- collect raw records into a pandas DataFrame
-- export CSV output under `app/data/benchmark_results/`
-- return aggregated summaries and readable highlights
+- persist raw results to CSV
+- return summaries and human-readable highlights
 
 ### 🔁 Reproducibility
 
-- benchmark runs are deterministic relative to their input maps
-- sample maps can be reused directly
-- random maps can be regenerated with a fixed `seed`
-- custom maps can be benchmarked repeatedly without hidden randomness
+Benchmarking is deterministic relative to its inputs. Results can be reproduced by:
+
+- reusing the sample maps
+- generating maps with a fixed `seed`
+- supplying your own fixed benchmark maps
 
 ## 🧰 Tech Stack
 
@@ -67,21 +68,21 @@ All algorithms support:
 
 ## 🏗️ Architecture
 
-The codebase follows a layered structure:
+The project uses a simple layered structure:
 
-- `app/api/`: FastAPI routes and HTTP concerns
-- `app/services/`: orchestration for pathfinding, maps, and benchmarking
-- `app/algorithms/`: BFS, Dijkstra, A*, and shared traversal helpers
-- `app/schemas/`: request and response models
-- `app/data/`: sample maps and benchmark CSV output
-
-Routes stay thin. Algorithm selection, benchmarking, and map generation live outside the API layer, which keeps the code easier to test and extend.
+- `app/api/` for HTTP routes and response models
+- `app/services/` for orchestration and application logic
+- `app/algorithms/` for BFS, Dijkstra, A*, and shared traversal helpers
+- `app/schemas/` for request and response validation
+- `app/data/` for sample maps and benchmark CSV output
 
 ```text
 API routes -> services -> algorithms
            -> schemas
            -> data
 ```
+
+This keeps routes thin and makes the algorithm and benchmarking logic easier to test independently.
 
 ## 🗂️ Project Structure
 
@@ -102,12 +103,12 @@ pathfinding-api/
 
 ## 🧱 Grid Model
 
-- `0` = blocked cell
-- positive integers = traversal cost
-- movement is limited to up, down, left, and right
-- `start` and `end` must be within bounds and cannot reference blocked cells
+- `0` means blocked
+- positive integers represent traversal cost
+- movement is 4-directional only
+- `start` and `end` must be in bounds and on traversable cells
 
-Example:
+Example grid:
 
 ```json
 [
@@ -121,35 +122,21 @@ Example:
 
 ### BFS
 
-Breadth-first search minimizes the number of steps. It is the right choice for unweighted movement where each move should be treated equally.
-
-- queue-based traversal with `collections.deque`
-- deterministic neighbor order
-- returns the cost of the chosen path for reporting, but does not optimize by weight
+Best when every move should count equally. It finds the fewest-step path, not the cheapest weighted path.
 
 ### Dijkstra
 
-Dijkstra minimizes total traversal cost on weighted grids.
-
-- priority queue via `heapq`
-- weighted shortest-path guarantee
-- ignores stale heap entries after a node has been finalized
+Best when cell weights matter. It guarantees the minimum total traversal cost.
 
 ### A*
 
-A* also minimizes total traversal cost, but uses a Manhattan-distance heuristic to guide the search.
-
-- priority queue via `heapq`
-- `f = g + h`
-- Manhattan heuristic aligned with 4-directional movement
-- same optimal-cost guarantee as Dijkstra on this grid model
+Also cost-optimal on this grid model, but uses Manhattan distance to guide the search toward the goal and reduce unnecessary exploration.
 
 ## 🚀 Setup
 
 ### 1. Create and activate a virtual environment
 
 ```bash
-cd /Users/matthewkim/Documents/GitHub/pathfinding-api
 python3 -m venv .venv
 source .venv/bin/activate
 ```
@@ -180,21 +167,20 @@ Run the full suite:
 .venv/bin/python -m pytest
 ```
 
-The current suite includes 48 tests covering:
+The current suite covers:
 
 - algorithm correctness
 - invalid input handling
-- API behavior
 - map generation
-- benchmarking workflows
+- service-layer behavior
+- API responses and validation
+- benchmark execution and CSV persistence
 
 ## 📡 API Endpoints
 
 ### `GET /`
 
-Basic service metadata.
-
-Example response:
+Returns basic service metadata.
 
 ```json
 {
@@ -206,7 +192,7 @@ Example response:
 
 ### `POST /path`
 
-Runs one pathfinding algorithm on one grid.
+Runs one algorithm on one grid.
 
 Example request:
 
@@ -247,9 +233,7 @@ Example response:
 
 ### `GET /maps/sample`
 
-Returns predefined sample maps.
-
-Example response:
+Returns predefined sample maps for experimentation.
 
 ```json
 {
@@ -369,7 +353,7 @@ Example response excerpt:
 }
 ```
 
-Each benchmark run is also saved to CSV under `app/data/benchmark_results/`.
+Each run is also exported to CSV under `app/data/benchmark_results/`.
 
 ### `GET /benchmark/sample`
 
@@ -377,42 +361,38 @@ Returns the most recently saved benchmark result, if one exists.
 
 ## 📈 Benchmarking Notes
 
-Benchmark runs collect:
+Each benchmark record includes:
 
 - algorithm
+- map name
 - map size
-- path success
+- success/failure
 - path length
 - total cost
 - visited nodes
 - runtime in milliseconds
 
-The response is designed to be readable, not just machine-friendly:
+The response is intentionally split into:
 
-- `records` contains the raw per-run data
-- `summaries` aggregates metrics per algorithm
-- `highlights` surfaces quick comparisons for humans
+- `records` for raw per-run data
+- `summaries` for algorithm-level averages
+- `highlights` for quick human-readable comparisons
 
-Because the benchmark service itself is deterministic relative to its inputs, results are reproducible when you use:
-
-- sample maps
-- custom fixed maps
-- seeded generated maps
+That makes the endpoint useful both for programmatic analysis and for quick inspection.
 
 ## 💡 Example Interpretation
 
-Typical patterns you can observe from the benchmark output:
+The benchmark output makes it easy to spot tradeoffs:
 
-- BFS can appear efficient on step count but return higher path costs on weighted maps.
-- Dijkstra guarantees optimal weighted cost but may visit more nodes.
-- A* can match Dijkstra’s optimal cost while reducing average runtime or search effort on goal-directed maps.
-- Benchmark highlights make it easy to surface statements like “A* was fastest on average” or “BFS visited the fewest nodes on this scenario mix.”
+- BFS may return shorter step counts but worse weighted costs
+- Dijkstra gives the cheapest path on weighted maps
+- A* can match Dijkstra’s optimal cost while exploring more selectively
+
+Those differences are visible in both the raw records and the summary highlights.
 
 ## 🔭 Future Work
 
-Potential next steps:
-
-- richer benchmark reporting and notebook analysis
+- richer benchmark analysis in notebooks
+- additional heuristics and search strategies
 - larger scenario sets for performance profiling
-- visualization of paths and explored nodes
-- additional heuristics or map-generation strategies
+- path and search visualization
